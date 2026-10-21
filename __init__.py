@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Upstream: https://github.com/kelpso/kanjigrid
-# AnkiWeb:  https://ankiweb.net/shared/info/1469765093
+# AnkiWeb:  https://ankiweb.net/shared/info/909972618
 
 import enum
 import operator
@@ -111,7 +111,7 @@ class KanjiGridWebView(AnkiWebView):
         super().__init__()
         # Saved images are empty if the background is transparent; AnkiWebView
         # sets bg color to transparent by default
-        self._page.setBackgroundColor(Qt.GlobalColor.white)
+        self.page().setBackgroundColor(Qt.GlobalColor.white)
         self.save_png = ()
 
     def eventFilter(self, obj, evt):
@@ -121,7 +121,7 @@ class KanjiGridWebView(AnkiWebView):
         filename, oldsize = self.save_png
         self.save_png = ()
 
-        size = self._page.contentsSize().toSize()
+        size = self.page().contentsSize().toSize()
         image = QImage(size, QImage.Format_ARGB32)
         painter = QPainter(image)
         self.render(painter)
@@ -166,28 +166,26 @@ class KanjiGrid:
             if avg_interval:
                 score = round(scoreAdjust(avg_interval / config.interval), 2)
 
-            if missing:
-                colour = "#888"
-            else:
-                colour = "#000"
-
             if count != 0:
                 bgcolour = hsvrgbstr(scoreAdjust(avg_interval / config.interval)/2)
             elif missing:
-                bgcolour = "#EEE"
+                bgcolour = "#FCE8E6"
             else:
                 bgcolour = "#FFF"
 
+            tile_class = "kanji-tile missing" if missing else "kanji-tile"
             if config.tooltips:
                 tooltip = "Character: %s" % unicodedata.name(char)
+                if missing:
+                    tooltip += " | Not present in selected deck"
                 if count:
                     tooltip += " | Count: %s | " % count
                     tooltip += "Avg Interval: %s | Score: %s | " % (round(avg_interval, 2), score)
                     tooltip += "Background: %s | Index: %s" % (bgcolour, index)
-                tile += "\t<td style=\"background:%s;\" title=\"%s\">" % (bgcolour, tooltip)
+                tile += "\t<td class=\"%s\" style=\"--tile-color:%s\" title=\"%s\">" % (tile_class, bgcolour, tooltip)
             else:
-                tile += "\t<td style=\"background:%s;\">" % (bgcolour)
-            tile += "<a href=\"http://jisho.org/search/%s%%20%%23kanji\" style=\"color:%s;\">%s</a></td>\n" % (char, colour, char)
+                tile += "\t<td class=\"%s\" style=\"--tile-color:%s\">" % (tile_class, bgcolour)
+            tile += "<a href=\"http://jisho.org/search/%s%%20%%23kanji\">%s</a></td>\n" % (char, char)
 
             return tile
 
@@ -197,24 +195,22 @@ class KanjiGrid:
         else:
             cols = config.thin
         self.html  = "<!doctype html><html><head><meta charset=\"UTF-8\" /><title>Anki Kanji Grid</title>"
-        self.html += "<style type=\"text/css\">body{background-color:#FFF;}table{margin-left:auto;margin-right:auto;}.maintable{width:85%;}td{text-align:center;vertical-align:top;}.key{display:inline-block;width:3em}a,a:visited{color:#000;text-decoration:none;}</style>"
+        self.html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />"
+        self.html += "<style type=\"text/css\">"
+        self.html += "*{box-sizing:border-box}body{margin:0;padding:32px 24px 48px;background:#f3f5f9;color:#263248;font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.page{width:100%;max-width:2200px;margin:0 auto}.page-title{margin:0;color:#19253a;font-size:clamp(2rem,4vw,3.4rem);font-weight:750;letter-spacing:-.04em}.deck-name{margin:2px 0 22px;color:#758198;font-size:1.15rem}.legend{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;margin:0 0 30px;padding:18px 22px;border:1px solid #e1e6ef;border-radius:16px;background:#fff;box-shadow:0 5px 18px #24334b0b}.legend-title{font-weight:700}.legend-scale{display:flex;align-items:center;gap:3px}.key{display:inline-block;width:28px;height:18px;border:1px solid #0000000d;border-radius:4px}.legend-note{color:#68758b;font-size:.9rem}.missing-key{display:inline-block;width:22px;height:22px;border:1px dashed #bd6262;border-radius:5px;background:#fce8e6;vertical-align:middle}.group{margin:0 0 26px;padding:20px 20px 22px;border:1px solid #e1e6ef;border-radius:16px;background:#fff;box-shadow:0 5px 18px #24334b0b;overflow-x:auto}.group h2{margin:0;color:#243550;font-size:1.55rem;font-weight:700}.group h4{margin:3px 0 14px;color:#7a879a;font-size:.92rem;font-weight:500}.maintable{margin:0 auto;border-spacing:4px;table-layout:fixed}.maintable tr{height:48px}.kanji-tile{width:46px;height:46px;padding:0;border:1px solid #e7ebf1;border-radius:9px;background:var(--tile-color,#fff);text-align:center;vertical-align:middle;transition:transform .12s ease,box-shadow .12s ease}.kanji-tile:hover{position:relative;z-index:1;transform:translateY(-2px);box-shadow:0 4px 12px #24334b20}.kanji-tile a,.kanji-tile a:visited{display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:#182338;text-decoration:none;font-size:1.65rem;line-height:1}.kanji-tile.missing{border:1px dashed #bd6262;background:var(--tile-color,#fce8e6)}.kanji-tile.missing a,.kanji-tile.missing a:visited{color:#a34a4a}.unclassified{margin-top:30px}.datasource{display:block;margin:14px auto 0;color:#8590a1;font-size:.8rem;text-align:center;overflow-wrap:break-word}.datasource a{color:#506b9a}.datasource a:hover{text-decoration:underline}@media(max-width:700px){body{padding:18px 12px 30px}.group{padding:14px 10px}.legend{padding:14px}.kanji-tile{width:38px;height:40px}.maintable tr{height:42px}.kanji-tile a,.kanji-tile a:visited{font-size:1.4rem}}</style>"
         self.html += "</head>\n"
-        self.html += "<body>\n"
-        self.html += "<span style=\"font-size: 3em;color: #888;\">Kanji Grid - %s</span><br>\n" % deckname
-        self.html += "<div style=\"margin-bottom: 24pt;padding: 20pt;\"><p style=\"float: left\">Key:</p>"
-        self.html += "<p style=\"float: right\">Weak&nbsp;"
-	# keycolors = (hsvrgbstr(n/6.0) for n in range(6+1))
+        self.html += "<body><main class=\"page\">\n"
+        self.html += "<h1 class=\"page-title\">Kanji Grid</h1><p class=\"deck-name\">Deck: %s</p>\n" % deckname
+        self.html += "<div class=\"legend\"><span class=\"legend-title\">Color guide</span><span class=\"legend-note\">Review strength:</span><span class=\"legend-note\">Weaker</span><span class=\"legend-scale\">"
         for c in [n/6.0 for n in range(6+1)]:
             self.html += "<span class=\"key\" style=\"background-color: %s;\">&nbsp;</span>" % hsvrgbstr(c/2)
-        self.html += "&nbsp;Strong</p></div>\n"
-        self.html += "<div style=\"clear: both;\"><br><hr style=\"border-style: dashed;border-color: #666;width: 60%;\"><br></div>\n"
-        self.html += "<div style=\"text-align: center;\">\n"
+        self.html += "</span><span class=\"legend-note\">Stronger</span><span class=\"legend-note\">White = not yet reviewed</span><span class=\"legend-note\"><span class=\"missing-key\"></span> Not in this deck</span></div>\n"
         if config.groupby >= len(SortOrder):
             groups = data.groups[config.groupby - len(SortOrder)]
             gc = 0
             kanji = [u.value for u in units.values()]
             for i in range(1, len(groups.data)):
-                self.html += "<h2 style=\"color:#888;\">%s Kanji</h2>\n" % groups.data[i][0]
+                self.html += "<section class=\"group\"><h2>%s Kanji</h2>\n" % groups.data[i][0]
                 table = "<table class=\"maintable\"><tr>\n"
                 count = -1
                 for unit in [units[c] for c in groups.data[i][1] if c in kanji]:
@@ -223,11 +219,19 @@ class KanjiGrid:
                         if count % cols == 0 and count != 0:
                             table += "</tr>\n<tr>\n"
                         table += kanjitile(unit.value, count, unit.count, unit.avg_interval)
-                table += "</tr></table>\n"
                 n = count+1
                 t = len(groups.data[i][1])
                 gc += n
-                if config.unseen:
+                if config.include_missing:
+                    missing = [c for c in groups.data[i][1] if c not in kanji]
+                    for char in missing:
+                        count += 1
+                        if count % cols == 0 and count != 0:
+                            table += "</tr>\n<tr>\n"
+                        table += kanjitile(char, count, missing=True)
+                    table += "</tr></table>\n"
+                elif config.unseen:
+                    table += "</tr></table>\n"
                     table += "<details><summary>Missing kanji</summary><table style=\"max-width:75%;\"><tr>\n"
                     count = -1
                     for char in [c for c in groups.data[i][1] if c not in kanji]:
@@ -238,11 +242,14 @@ class KanjiGrid:
                     if count == -1:
                         table += "<td><b style=\"color:#CCC\">None</b></td>"
                     table += "</tr></table></details>\n"
-                self.html += "<h4 style=\"color:#888;\">%d of %d - %0.2f%%</h4>\n" % (n, t, n*100.0/t)
-                self.html += table
+                else:
+                    table += "</tr></table>\n"
+                percent = n*100.0/t if t else 0.0
+                self.html += "<h4>%d of %d - %0.2f%%</h4>\n" % (n, t, percent)
+                self.html += table + "</section>\n"
 
             chars = reduce(lambda x, y: x+y, dict(groups.data).values())
-            self.html += "<h2 style=\"color:#888;\">%s Kanji</h2>" % groups.data[0][0]
+            self.html += "<section class=\"group unclassified\"><h2>%s Kanji</h2>" % groups.data[0][0]
             table = "<table class=\"maintable\"><tr>\n"
             count = -1
             for unit in [u for u in units.values() if u.value not in chars]:
@@ -253,10 +260,12 @@ class KanjiGrid:
                     table += kanjitile(unit.value, count, unit.count, unit.avg_interval)
             table += "</tr></table>\n"
             n = count+1
-            self.html += "<h4 style=\"color:#888;\">%d of %d - %0.2f%%</h4>\n" % (n, gc, n*100.0/gc)
-            self.html += table
-            self.html += "<style type=\"text/css\">.datasource{font-style:italic;font-size:0.75em;margin-top:1em;overflow-wrap:break-word;}.datasource a{color:#1034A6;}</style><span class=\"datasource\">Data source: " + ' '.join("<a href=\"{}\">{}</a>".format(w, urllib.parse.unquote(w)) if re.match("https?://", w) else w for w in groups.source.split(' ')) + "</span>"
+            percent = n*100.0/gc if gc else 0.0
+            self.html += "<h4>%d of %d - %0.2f%%</h4>\n" % (n, gc, percent)
+            self.html += table + "</section>\n"
+            self.html += "<span class=\"datasource\">Data source: " + ' '.join("<a href=\"{}\">{}</a>".format(w, urllib.parse.unquote(w)) if re.match("https?://", w) else w for w in groups.source.split(' ')) + "</span>"
         else:
+            self.html += "<section class=\"group\"><h2>All Kanji</h2>\n"
             table = "<table class=\"maintable\"><tr>\n"
             unitsList = {
                 SortOrder.NONE:      sorted(units.values(), key=lambda unit: (unit.idx, unit.count)),
@@ -272,9 +281,9 @@ class KanjiGrid:
                         table += "</tr>\n<tr>\n"
                     table += kanjitile(unit.value, count, unit.count, unit.avg_interval)
             table += "</tr></table>\n"
-            self.html += "<h4 style=\"color:#888;\">%d total unique kanji</h4>\n" % (count+1)
-            self.html += table
-        self.html += "</div></body></html>\n"
+            self.html += "<h4>%d total unique kanji</h4>\n" % (count+1)
+            self.html += table + "</section>\n"
+        self.html += "</main></body></html>\n"
 
     def displaygrid(self, config, units, timeNow):
         self.generate(config, units, timeNow)
@@ -294,12 +303,13 @@ class KanjiGrid:
         bb = QPushButton("Close", clicked=self.win.reject)
         hl.addWidget(bb)
         self.win.setLayout(vl)
-        self.win.resize(500, 400)
+        self.win.resize(1280, 850)
         self.timepoint("Window complete")
         return 0
 
     def savehtml(self, config):
-        fileName = QFileDialog.getSaveFileName(self.win, "Save Page", QStandardPaths.standardLocations(QStandardPaths.DesktopLocation)[0], "Web Page (*.html *.htm)")[0]
+        desktop = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.DesktopLocation)[0]
+        fileName = QFileDialog.getSaveFileName(self.win, "Save Page", desktop, "Web Page (*.html *.htm)")[0]
         if fileName != "":
             mw.progress.start(immediate=True)
             if ".htm" not in fileName:
@@ -312,7 +322,8 @@ class KanjiGrid:
             showInfo("Page saved to %s!" % os.path.abspath(fileOut.name))
 
     def savepng(self):
-        fileName = QFileDialog.getSaveFileName(self.win, "Save Page", QStandardPaths.standardLocations(QStandardPaths.DesktopLocation)[0], "Portable Network Graphics (*.png)")[0]
+        desktop = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.DesktopLocation)[0]
+        fileName = QFileDialog.getSaveFileName(self.win, "Save Page", desktop, "Portable Network Graphics (*.png)")[0]
         if fileName != "":
             mw.progress.start(immediate=True)
             if ".png" not in fileName:
@@ -364,6 +375,12 @@ class KanjiGrid:
     def setup(self):
         addonconfig = mw.addonManager.getConfig(__name__)
         config = types.SimpleNamespace(**addonconfig['defaults'])
+        last_used = addonconfig.get("last_used", {})
+        if isinstance(last_used, dict):
+            for key in ("pattern", "literal", "interval", "thin", "wide", "groupby",
+                        "unseen", "include_missing", "tooltips"):
+                if key in last_used:
+                    setattr(config, key, last_used[key])
         if addonconfig.get("_debug_time", False):
             self.timepoint = lambda c: print("%s: %0.3f" % (c, time.time()-self.time))
         else:
@@ -374,10 +391,15 @@ class KanjiGrid:
         vl = QVBoxLayout()
         fl = QHBoxLayout()
         deckcb = QComboBox()
-        deckcb.addItems(sorted(mw.col.decks.allNames()))
+        deck_names = sorted(mw.col.decks.allNames())
+        deckcb.addItems(deck_names)
         deckcb.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         fl.addWidget(QLabel("Deck: "))
-        deckcb.setCurrentText(mw.col.decks.get(config.did)['name'])
+        saved_deck = last_used.get("deck") if isinstance(last_used, dict) else None
+        if saved_deck in deck_names:
+            config.did = mw.col.decks.byName(saved_deck)['id']
+        selected_deck = mw.col.decks.get(config.did)['name']
+        deckcb.setCurrentText(selected_deck)
         def change_did(deckname):
             config.did = mw.col.decks.byName(deckname)['id']
         deckcb.currentTextChanged.connect(change_did)
@@ -388,6 +410,7 @@ class KanjiGrid:
         il = QVBoxLayout()
         fl = QHBoxLayout()
         field = QLineEdit()
+        field.setText(" ".join(config.pattern) if isinstance(config.pattern, list) else config.pattern)
         field.setPlaceholderText("e.g. \"kanji\" or \"sentence-kanji\" (default: \"%s\")" % config.pattern)
         il.addWidget(QLabel("Pattern or Field names to search for (case insensitive):"))
         fl.addWidget(field)
@@ -421,6 +444,9 @@ class KanjiGrid:
         shnew = QCheckBox("Show units not yet seen")
         shnew.setChecked(config.unseen)
         il.addWidget(shnew)
+        missingcb = QCheckBox("Include kanji not in deck in grouped grids")
+        missingcb.setChecked(config.include_missing)
+        il.addWidget(missingcb)
         toolt = QCheckBox("Show informational tooltips")
         toolt.setChecked(config.tooltips)
         il.addWidget(toolt)
@@ -440,12 +466,27 @@ class KanjiGrid:
         swin.setTabOrder(ttcol, wtcol)
         swin.setTabOrder(wtcol, groupby)
         swin.setTabOrder(groupby, shnew)
-        swin.setTabOrder(shnew, toolt)
+        swin.setTabOrder(shnew, missingcb)
+        swin.setTabOrder(missingcb, toolt)
         swin.resize(500, 400)
         if swin.exec():
             mw.progress.start(immediate=True)
-            if len(field.text().strip()) != 0:
-                config.pattern = field.text().lower()
+            pattern = field.text().strip() or (" ".join(config.pattern) if isinstance(config.pattern, list) else config.pattern)
+            config.pattern = pattern.lower()
+            config.did = mw.col.decks.byName(deckcb.currentText())['id']
+            addonconfig["last_used"] = {
+                "pattern": config.pattern,
+                "deck": deckcb.currentText(),
+                "literal": liter.isChecked(),
+                "interval": stint.value(),
+                "thin": ttcol.value(),
+                "wide": wtcol.value(),
+                "groupby": groupby.currentIndex(),
+                "unseen": shnew.isChecked(),
+                "include_missing": missingcb.isChecked(),
+                "tooltips": toolt.isChecked(),
+            }
+            mw.addonManager.writeConfig(__name__, addonconfig)
             config.pattern = config.pattern.split()
             config.literal = liter.isChecked()
             config.interval = stint.value()
@@ -453,6 +494,7 @@ class KanjiGrid:
             config.wide = wtcol.value()
             config.groupby = groupby.currentIndex()
             config.unseen = shnew.isChecked()
+            config.include_missing = missingcb.isChecked()
             config.tooltips = toolt.isChecked()
             self.makegrid(config)
             mw.progress.finish()
